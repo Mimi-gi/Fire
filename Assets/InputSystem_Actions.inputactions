@@ -21,7 +21,7 @@
                     "id": "110c93a2-bb8e-453d-8688-6b5d0d266d31",
                     "expectedControlType": "",
                     "processors": "",
-                    "interactions": "",
+                    "interactions": "Press(pressPoint=0.1,behavior=2)",
                     "initialStateCheck": false
                 },
                 {
@@ -30,32 +30,52 @@
                     "id": "0d86c728-bb65-467b-bf56-2521005a0ef7",
                     "expectedControlType": "",
                     "processors": "",
+                    "interactions": "Press(pressPoint=0.1)",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Birth",
+                    "type": "Button",
+                    "id": "fb179b55-a8bc-41b0-94dd-4aaf41c59223",
+                    "expectedControlType": "",
+                    "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
                 }
             ],
             "bindings": [
                 {
-                    "name": "",
-                    "id": "c129fab9-abba-4486-bcfa-109ca4160397",
+                    "name": "1D Axis",
+                    "id": "baa775cf-59ab-49b9-95a8-39ff3b9f2e98",
+                    "path": "1DAxis",
+                    "interactions": "Press(pressPoint=0.5,behavior=2)",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Move",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "negative",
+                    "id": "db00d389-b0f2-43e2-8556-d1353af7ebc3",
                     "path": "<Keyboard>/leftArrow",
                     "interactions": "",
                     "processors": "",
                     "groups": ";Keyboard&Mouse",
                     "action": "Move",
                     "isComposite": false,
-                    "isPartOfComposite": false
+                    "isPartOfComposite": true
                 },
                 {
-                    "name": "",
-                    "id": "bc749bde-a2dd-492f-9d4f-32ca6a9e55fa",
+                    "name": "positive",
+                    "id": "6f2a81ca-75d3-4c55-a101-0e88f9b0ad53",
                     "path": "<Keyboard>/rightArrow",
                     "interactions": "",
                     "processors": "",
                     "groups": ";Keyboard&Mouse",
                     "action": "Move",
                     "isComposite": false,
-                    "isPartOfComposite": false
+                    "isPartOfComposite": true
                 },
                 {
                     "name": "",
@@ -76,6 +96,17 @@
                     "processors": "",
                     "groups": ";Keyboard&Mouse",
                     "action": "Act",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "7a6e6675-8cad-4d5e-b51b-d15d92cd7299",
+                    "path": "<Keyboard>/b",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "Birth",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

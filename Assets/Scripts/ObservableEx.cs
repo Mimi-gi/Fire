@@ -39,12 +39,15 @@ namespace ObservableExtensions
         }
 
         // Keep the original for backward compatibility if needed, or remove if unused.
-        public static Observable<Unit> InputToObservable(InputAction action)
+        public static Observable<InputType> InputToObservable(InputAction action)
         {
-            return action.PerformedAsObservable().Select(_ => Unit.Default);
+            return Observable.Merge(
+                action.PerformedAsObservable().Select(_ => InputType.Press),
+                action.CanceledAsObservable().Select(_ => InputType.Release)
+            );
         }
 
-        public static async UniTask AwaitInvoke(Observable<Unit> observable, Func<UniTask> onTimeout, Func<UniTask> onEvent, float timeout = -1f)
+        public static async UniTask AwaitInvoke(Observable<InputType> observable, Func<UniTask> onTimeout, Func<UniTask> onEvent, float timeout = -1f)
         {
             UniTask task_event = observable.FirstAsync().AsUniTask();
             UniTask task_timeout = UniTask.Delay((int)(timeout * 1000));
@@ -60,7 +63,7 @@ namespace ObservableExtensions
         }
 
         public static async UniTask SeriesAwaitInvoke(
-            Observable<Unit> observable,
+            Observable<InputType> observable,
             Func<UniTask> preMotion,
             Func<UniTask> onTimeout,
             Func<UniTask> onEvent,
@@ -101,5 +104,26 @@ namespace ObservableExtensions
                 await onTimeout();
             }
         }
+
+        public static ReadOnlyReactiveProperty<float> InputAxisToReactiveProperty(InputAction action)
+        {
+            return Observable.Create<float>(observer =>
+            {
+                Action<InputAction.CallbackContext> handler = ctx => observer.OnNext(ctx.ReadValue<float>());
+                action.performed += handler;
+                action.canceled += handler;
+                return Disposable.Create(() =>
+                {
+                    action.performed -= handler;
+                    action.canceled -= handler;
+                });
+            }).ToReadOnlyReactiveProperty(action.ReadValue<float>());
+        }
     }
+}
+
+public enum InputType
+{
+    Press,
+    Release
 }
