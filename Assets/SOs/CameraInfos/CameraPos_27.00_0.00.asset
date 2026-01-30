@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: de63de31a33aedc4498a448b0012d95a, type: 3}
-  m_Name: CameraPos_1.26_-0.56
-  m_EditorClassIdentifier: Assembly-CSharp::CameraInfomation
-  _centerPos: {x: 0, y: 0, z: -10}
-  _size: 10
+  m_Name: CameraPos_27.00_0.00
+  m_EditorClassIdentifier: Assembly-CSharp::CameraInformation
+  _centerPos: {x: 22, y: 0, z: -10}
+  _size: 4

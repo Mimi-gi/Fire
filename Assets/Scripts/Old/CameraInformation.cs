@@ -1,7 +1,7 @@
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "CameraInfomation", menuName = "Scriptable Objects/CameraInfomation")]
-public class CameraInfomation : ScriptableObject
+[CreateAssetMenu(fileName = "CameraInformation", menuName = "Scriptable Objects/CameraInformation")]
+public class CameraInformation : ScriptableObject
 {
     [SerializeField] Vector3 _centerPos;
     [SerializeField] float _size;

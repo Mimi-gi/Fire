@@ -42,7 +42,7 @@ namespace ObservableExtensions
         public static Observable<InputType> InputToObservable(InputAction action)
         {
             return Observable.Merge(
-                action.PerformedAsObservable().Select(_ => InputType.Press),
+                action.StartedAsObservable().Select(_ => InputType.Press),
                 action.CanceledAsObservable().Select(_ => InputType.Release)
             );
         }
@@ -118,6 +118,22 @@ namespace ObservableExtensions
                     action.canceled -= handler;
                 });
             }).ToReadOnlyReactiveProperty(action.ReadValue<float>());
+        }
+
+        /// <summary>
+        /// Subject<Unit>が発火するまで待機します。
+        /// </summary>
+        public static async UniTask WaitAsync(this Subject<Unit> subject)
+        {
+            await subject.FirstAsync().AsUniTask();
+        }
+
+        /// <summary>
+        /// Observable<Unit>が発火するまで待機します。
+        /// </summary>
+        public static async UniTask WaitAsync(this Observable<Unit> observable)
+        {
+            await observable.FirstAsync().AsUniTask();
         }
     }
 }

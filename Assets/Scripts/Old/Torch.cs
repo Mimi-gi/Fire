@@ -4,13 +4,15 @@ using R3;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
-public class Torch : MonoBehaviour, IButton, IActable
+public class Torch : MonoBehaviour, IButton, IActable, IResetable
 {
     ReactiveProperty<bool> _isPressed = new ReactiveProperty<bool>(false);
     public ReadOnlyReactiveProperty<bool> IsPressed { get { return _isPressed; } }
     [SerializeField] List<Buttonedable> buttonedable;
     public IDisposable _spriteDispose; //炎の移動
 
+    [SerializeField] LevelInformation _levelInformation;
+    public LevelInformation LevelInformation { get => _levelInformation; }
 
     //仮実装
     [SerializeField] Sprite _idle;
@@ -21,6 +23,7 @@ public class Torch : MonoBehaviour, IButton, IActable
     SpriteRenderer _spriteRenderer;
     void Start()
     {
+        Register();
         _light.enabled = false;
         _spriteRenderer = GetComponent<SpriteRenderer>();
         _isPressed.Subscribe(isPressed =>
@@ -30,7 +33,7 @@ public class Torch : MonoBehaviour, IButton, IActable
             {
                 foreach (var item in buttonedable)
                 {
-                    item.Set(isPressed);
+                    item.Press();
                 }
             }
             if (isPressed)
@@ -76,6 +79,17 @@ public class Torch : MonoBehaviour, IButton, IActable
         {
             GetComponent<SpriteRenderer>().sprite = _idle;
         }
+    }
+
+    public void Reset()
+    {
+        Debug.Log("リセット");
+        _isPressed.Value = false;
+        _spriteDispose?.Dispose();
+    }
+    public void Register()
+    {
+        LevelInformation.RegisterResetable(this);
     }
 
 

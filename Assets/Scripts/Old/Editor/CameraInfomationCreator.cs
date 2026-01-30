@@ -6,7 +6,7 @@ public class CameraInfomationCreator : EditorWindow
 {
     private bool _isEnabled = false;
     private string _saveDir = "SOs/CameraInfos"; // Assetsフォルダからの相対パス
-    private float _defaultSize = 10f;
+    private float _defaultSize = 4f;
     private bool _showPreview = true;
 
     [MenuItem("Tools/CameraInfomation Creator")]
@@ -80,6 +80,12 @@ public class CameraInfomationCreator : EditorWindow
             }
         }
 
+        // 格子点にスナップ
+        if (foundPos)
+        {
+            worldPos = new Vector3(Mathf.Round(worldPos.x), Mathf.Round(worldPos.y), worldPos.z);
+        }
+
         if (foundPos && _showPreview)
         {
             Handles.color = Color.cyan;
@@ -95,7 +101,7 @@ public class CameraInfomationCreator : EditorWindow
             Vector3 size = new Vector3(width, height, 0f);
 
             Handles.DrawWireCube(worldPos, size);
-            Handles.Label(worldPos + Vector3.up * (_defaultSize + 0.5f), "作成位置");
+            Handles.Label(worldPos + Vector3.up * (_defaultSize + 0.5f), $"作成位置 ({worldPos.x}, {worldPos.y})");
             SceneView.RepaintAll();
         }
 
@@ -119,10 +125,10 @@ public class CameraInfomationCreator : EditorWindow
             AssetDatabase.Refresh();
         }
 
-        CameraInfomation asset = ScriptableObject.CreateInstance<CameraInfomation>();
+        CameraInformation asset = ScriptableObject.CreateInstance<CameraInformation>();
 
         // privateフィールドなどにアクセスするためにリフレクションを使用
-        System.Type type = typeof(CameraInfomation);
+        System.Type type = typeof(CameraInformation);
         System.Reflection.FieldInfo centerPosField = type.GetField("_centerPos", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         System.Reflection.FieldInfo sizeField = type.GetField("_size", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
@@ -132,7 +138,7 @@ public class CameraInfomationCreator : EditorWindow
         }
         else
         {
-            Debug.LogError("CameraInfomationにフィールド '_centerPos' が見つかりませんでした。");
+            Debug.LogError("CameraInformationにフィールド '_centerPos' が見つかりませんでした。");
         }
 
         if (sizeField != null)
@@ -154,7 +160,7 @@ public class CameraInfomationCreator : EditorWindow
         AssetDatabase.CreateAsset(asset, uniquePath);
         AssetDatabase.SaveAssets();
 
-        Debug.Log($"{position} に CameraInfomation を作成し、 {uniquePath} に保存しました。");
+        Debug.Log($"{position} に CameraInformation を作成し、 {uniquePath} に保存しました。");
 
         // 作成したアセットをハイライト
         EditorGUIUtility.PingObject(asset);

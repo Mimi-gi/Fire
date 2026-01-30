@@ -8,7 +8,9 @@ using LitMotion.Extensions;
 using System.Collections.Generic;
 using UnityEngine.VFX;
 using System;
-using System.Threading.Tasks;
+using System.Threading;
+using UniTaskExtensions;
+using ObservableExtensions;
 
 
 public class Player : MonoBehaviour
@@ -41,6 +43,7 @@ public class Player : MonoBehaviour
     [Header("行動関連")]
     [SerializeField] VisualEffect _actVFX;
     CircleVFX _actVFxTransform;
+    public bool Actability = true;
     [SerializeField] Circle _idleFxCircle;
     [SerializeField] Circle _stretchFxCircle;
     [SerializeField] BoxCollider2D _actCollider;
@@ -50,9 +53,8 @@ public class Player : MonoBehaviour
     [SerializeField] AnimationClip _death;
     bool _isDeathing = false;
 
-    bool _inputable = true;
-
-
+    ReactiveProperty<bool> _inputable = new(true);
+    CancellationTokenSource _animationCts;
 
     HashSet<Collider2D> _leftWalls = new();
     HashSet<Collider2D> _rightWalls = new();
@@ -61,6 +63,12 @@ public class Player : MonoBehaviour
 
     void Start()
     {
+        _inputable
+        .Subscribe(x =>
+        {
+            Debug.Log("Inputable: " + x);
+        })
+        .AddTo(this);
         PlayerManager.Instance.RegisterPlayer(this);
         _transformVFX = new TransformVFX(_vfx);
         _transformVFX.SetTransform(_idleBox);
@@ -106,14 +114,14 @@ public class Player : MonoBehaviour
             .AddTo(this));
 
         _disposables.Add(InputProcessor.Instance.Move
-            .Where(x => x != 0 && _inputable)
+            .Where(x => x != 0 && _inputable.Value)
             .SubscribeAwait(async (x, ct) =>
             {
                 while (ct.IsCancellationRequested == false)
                 {
                     float currentInput = InputProcessor.Instance.Move.CurrentValue;
 
-                    if (currentInput == 0 || !_inputable) break;
+                    if (currentInput == 0 || !_inputable.Value) break;
 
                     if (_isStretching)
                     {
@@ -151,19 +159,21 @@ public class Player : MonoBehaviour
             }, AwaitOperation.Drop));
 
         _disposables.Add(InputProcessor.Instance.Up
-            .Where(_ => _inputable)
+            .Where(_ => _inputable.Value && !_isMoving && !_isDeathing)
             .SubscribeAwait(async (x, ct) =>
             {
+                Debug.Log("State :" + x);
                 switch (x)
                 {
                     case InputType.Press:
+                        Debug.Log("Press");
                         if (!Stretchability) return;
-                        ChangeAnimation(State.Stretch);
+                        await ChangeAnimation(State.Stretch);
                         _isStretching = true;
                         break;
                     case InputType.Release:
                         Debug.Log("Release");
-                        ChangeAnimation(State.Idle);
+                        await ChangeAnimation(State.Idle);
                         _isStretching = false;
                         break;
                 }
@@ -183,10 +193,11 @@ public class Player : MonoBehaviour
             }));
 
         _disposables.Add(InputProcessor.Instance.Act
-            .Where(x => x == InputType.Press && _inputable)
+            .Where(x => x == InputType.Press && _inputable.Value)
             .SubscribeAwait(async (x, ct) =>
             {
                 Movability = false;
+                _inputable.Value = false;
                 if (_isStretching)
                 {
                     _actVFxTransform.SetCircle(_stretchFxCircle);
@@ -212,6 +223,7 @@ public class Player : MonoBehaviour
                 await UniTask.Delay(50);
                 Movability = true;
                 _actCollider.enabled = false;
+                _inputable.Value = true;
             }));
     }
 
@@ -221,23 +233,46 @@ public class Player : MonoBehaviour
         Stretchability = !_isMoving && !_isStretching;
     }
 
-    void ChangeAnimation(State target)
+    async UniTask ChangeAnimation(State target)
     {
+        // 既存のアニメーションをキャンセル
+        _animationCts?.Cancel();
+        _animationCts?.Dispose();
+        _animationCts = new CancellationTokenSource();
+        var ct = _animationCts.Token;
+
         Movability = false;
-        //現状はスプライトで対応
-        switch (target)
+        Actability = false;
+
+        try
         {
-            case State.Idle:
-                _animator.Play(AnimationNames.Fire_idle);
-                break;
-            case State.Move:
-                _animator.Play(AnimationNames.Fire_idle);
-                break;
-            case State.Stretch:
-                _animator.Play(AnimationNames.Fire_stretch);
-                break;
+            switch (target)
+            {
+                case State.Idle:
+                    Debug.Log("Idle");
+                    await _animator.PlayAndAwait(AnimationNames.Fire_ToIdle, 0, ct);
+                    ct.ThrowIfCancellationRequested();
+                    _animator.Play(AnimationNames.Fire_idle);
+                    break;
+                case State.Move:
+                    Debug.Log("Move");
+                    _animator.Play(AnimationNames.Fire_idle);
+                    break;
+                case State.Stretch:
+                    Debug.Log("Stretch");
+                    await _animator.PlayAndAwait(AnimationNames.Fire_ToStretch, 0, ct);
+                    ct.ThrowIfCancellationRequested();
+                    _animator.Play(AnimationNames.Fire_stretch);
+                    break;
+            }
+            Actability = true;
+            Movability = true;
         }
-        Movability = true;
+        catch (OperationCanceledException)
+        {
+            // キャンセルされた場合は新しいアニメーションに処理を委譲
+            Debug.Log("Animation cancelled - switching to new animation");
+        }
     }
 
     public async UniTaskVoid Death()
@@ -258,13 +293,15 @@ public class Player : MonoBehaviour
 
     public void Off()
     {
-        _inputable = false;
+        _inputable.Value = false;
     }
 
     public void On()
     {
-        _inputable = true;
+        _inputable.Value = true;
     }
+
+
 
 
 }
@@ -283,4 +320,6 @@ public static class AnimationNames
     public const string Extinguish3 = "Extinguish3";
     public const string Fire_idle = "Fire_idle";
     public const string Fire_stretch = "Fire_stretch";
+    public const string Fire_ToStretch = "Fire_ToStretch";
+    public const string Fire_ToIdle = "Fire_ToIdle";
 }
